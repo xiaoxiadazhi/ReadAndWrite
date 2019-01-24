@@ -418,4 +418,13 @@
 
 ​	如前所述，输入不断地被累加到状态中，直到它们被完全消费，然后产生输出。然而，在这种情况下，我们得到的不是一个输出，而是4个：在时间上切分成了4个事件时间窗口，每个窗口产生一个输出。
 
-​	现在我们已经回顾了第一章中介绍的两个主要概念：event-time和processing-time域之间的关系，和窗口化。再进一步，开始阐述本节开头提到的新概念：Watermark，触发器和accumulation 。
+​	现在我们已经回顾了第一章中介绍的两个主要概念：event-time和processing-time域之间的关系，和windowing。如果想更进一步，我们需要开始添加本节开头提到的新概念：Watermark，trigger和accumulation 。
+
+#### Going Straming：When and How
+
+​	我们刚才观察了在批式引擎上的窗口化pipeline的执行。但是，我们的理想期望是：结果有更低的延迟、能原生处理无界数据源。切换到流式引擎是朝着正确方向迈出的一步，但是我们之前等到全部输入都被消费完再产生输出的策略不再具有可行性。进入triggers和watermarks。
+
+##### When: The Wonderful Thing About Triggers Is Triggers Are Wonderful Things! 
+
+​	触发器回答了问题“When in processing time are results materialized? ”触发器声明了在处理时间中某个窗口的结果何时被输出。某个窗口的每个指定的输出被称为窗口的一个*pane*
+
