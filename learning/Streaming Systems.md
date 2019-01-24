@@ -426,5 +426,11 @@
 
 ##### When: The Wonderful Thing About Triggers Is Triggers Are Wonderful Things! 
 
-​	触发器回答了问题“When in processing time are results materialized? ”触发器声明了在处理时间中某个窗口的结果何时被输出。某个窗口的每个指定的输出被称为窗口的一个*pane*
+​	触发器回答了问题“When in processing time are results materialized? ”触发器声明了在处理时间中某个窗口的结果何时被输出。某个窗口的每个指定的输出被称为窗口的一个*pane*（窗格）。
+
+​	虽然触发语义可能十分广泛，但是从概念上讲只有两类普遍使用的触发器，实际的应用程序几乎总是使用其中的一个或二者的组合：
+
+* Repeated update triggers（重复更新触发器）
+  * 这类触发器会定期生成更新过的窗口窗格。这些更新可能发生在每条新纪录到达时，也可能发生在一些处理时间延迟后，比如一分钟一次。
+* Completeness triggers（完整性触发器）
 
