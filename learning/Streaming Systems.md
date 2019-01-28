@@ -435,5 +435,64 @@
 * Completeness triggers（完整性触发器）
   * 这类触发器只有在窗口的输入被认为是完整的之后，才会输出一个窗格（pane）。这种类型的触发器与我们在批处理中熟悉的类似：只有在输入是完整的之后，我们才提供结果。基于触发器的方式的不同之处在于，完整性概念是作用于单个窗口，而不是受限于整个输入的完整性。
 
-重复更新触发器是流式系统中最常见的触发器。它们容易实现、容易理解，并且为一种特定类型的用例提供了有用的语义：
+​        重复更新触发器是流式系统中最常见的触发器。它们容易实现、容易理解，并且为一种特定类型的用例提供了有用的语义：对可无话的数据集的重复（并最终一致）的更新，类似于数据库世界中物化视图所获得的语义。
 
+​	完整性触发器很少遇到，但提供的流式语义更接近经典批处理世界的流式语义。它们还提供了推理如缺失数据和迟到数据之类的工具，这两者我们稍后都会在探索驱动完整性触发器的基础原语（watermarks）时讨论。
+
+​	但是首先，让我们从简单的开始，看看一些基本的重复更新触发器。为了让触发器的概念更加具体，让我们继续向我们的示例pipeline中添加最简单的触发器：每来一条新纪录都会触发的触发器，如Example 2-3所示。
+
+```java
+Example 2-3. Triggering repeatedly with every record
+
+PCollection<KV<Team, Integer>> totals = input
+.apply(Window.into(FixedWindows.of(TWO_MINUTES))
+.triggering(Repeatedly(AfterCount(1))));
+.apply(Sum.integersPerKey()); 
+```
+
+​	如果我们在流式引擎运行这个pipeline，结果将如图2-6所示
+
+​	你可以看到我们怎么为每个窗口获取多个输出（panes）：每个相应的输入一次。当输出流被写到某类表时这类触发器很有效，你可以简单地轮询结果。
+
+​	每条记录都触发的一个缺点是性能很差。当处理大规模数据时，求和等聚合提供了很好的机会在不丢失信息的前提下减少流的基数。在你拥有大数据量的key时尤其明显。
+
+​	触发中处理时间延迟有两种不同的方法：
+
+* 对齐延迟
+
+  * 延迟将processing time切分成每个key和窗口都对齐的固定区域
+
+* 非对齐延迟
+
+  * 延迟与窗口内观察到的数据相关
+
+  对齐延迟的pipeline如Example 2-4，结果如图2-7
+
+  ```java
+  Example 2-4. Triggering on aligned two-minute processing-time boundaries
+
+  PCollection<KV<Team, Integer>> totals = input
+  .apply(Window.into(FixedWindows.of(TWO_MINUTES))
+  .triggering(Repeatedly(AlignedDelay(TWO_MINUTES)))
+  .apply(Sum.integersPerKey());
+  ```
+
+​	你能够从如Spark Streaming这类微批流失系统总获取这类对齐延迟触发器。它最大的好处就是可预测性，您可以同时在所有修改过的窗口中定期更新。当然也有缺点：所有的更新一次性发生，会导致需要更高的峰值配置才能处理这种突发性的工作服在。另一种方法是使用非对齐延迟，如Example 2-5。
+
+```java
+Example 2-5. Triggering on unaligned two-minute processing-time
+boundaries
+
+PCollection<KV<Team, Integer>> totals = input
+.apply(Window.into(FixedWindows.of(TWO_MINUTES))
+.triggering(Repeatedly(UnalignedDelay(TWO_MINUTES))
+.apply(Sum.integersPerKey());
+```
+
+​	对比图2-8种的非对齐延迟和2-6种的对齐延迟，很容易看出来非对齐延迟如何在一段时间内更均匀地分散负载。任何给定窗口所涉及的实际延迟在两者之间有所不同，有时更多，有时更少，但最终平均延迟将保持基本相同。从这个角度来看，非对齐延迟通常是大规模处理的更好选择，因为它们会随着时间推移产生更均匀的负载分布。
+
+​	重复更新触发器非常适用于我们只希望随着时间的推移定期更新结果的用例，并且这些更新收敛于正确性并且没有明确指示何时实现正确性。但，正如我们第一章所说，分布式系统的变幻莫测经常导致事件发生的时间与管道实际观察到的时间之间存在不同程度的偏差，这意味着很难推断出输出何时提供输入数据的准确完整视图。对于输入完整性很重要的情况，重要的是要有一些推理完整性的方法，而不是盲目地信任计算结果，这些结果是由恰好已经找到通向管道的数据子集计算出来的。接下来研究watermarks
+
+图和表见：
+
+http://www.streamingbook.net/fig
