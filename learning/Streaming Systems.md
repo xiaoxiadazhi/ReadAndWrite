@@ -493,4 +493,28 @@ PCollection<KV<Team, Integer>> totals = input
 
 ​	重复更新触发器非常适用于我们只希望随着时间的推移定期更新结果的用例，并且这些更新收敛于正确性并且没有明确指示何时实现正确性。但，正如我们第一章所说，分布式系统的变幻莫测经常导致事件发生的时间与管道实际观察到的时间之间存在不同程度的偏差，这意味着很难推断出输出何时提供输入数据的准确完整视图。对于输入完整性很重要的情况，重要的是要有一些推理完整性的方法，而不是盲目地信任计算结果，这些结果是由恰好已经找到通向管道的数据子集计算出来的。接下来研究watermarks
 
+##### When: Watermarks
+
+​	Watermarks能够回答问题"When in processing time are results materialized? " watermarks是event-time域中输入完整性的时间概念。换句话说，它们是系统衡量事件流中正在被处理的记录的事件时间的进度和完整性的方式。（有界无界都可以，虽然它们在无界的例子中的作用更明显）
+
+​	回顾下第一章中的这张图，图2-9稍作了修改，我把event time和processing time之间的偏差描述成大多数真实世界的分布式数据处理系统中不断变换的时间函数。
+
+![2-9](..\picture\streaming\2-9.png)
+
+​	我说的代表真实世界的红线本质上就是watermark；它随着processing time的推移捕获event-time完整性的进度。从概念上讲，你可以把watermark想象成一个函数，F(P)->E，它传入processing time的一个点，返回event time的一个点。event time中的点E，是系统认为观察到了事件时间小于E的所有输入的点。换句话说，它是一个断言：不会再看到事件时间小于E的数据。由于watermark可以是perfect（完美）或者heuristic（启发式），所以该断言可以是严格的保证或者有根据的猜测。
+
+- Perfect watermarks
+  - 对于我们对所有输入数据完全了解的这种情况，是可以构建出perfect watermark的。这种情况没有late date这一说，所有数据都按时到达。
+- Heuristic watermarks
+  - 对于大多分布式输入源，完全了解输入数据是不现实的，对于这种情况最好的选择就是提供一个heuristic watermark。heuristic watermark使用输入的任何可用信息（分区，分区内有序，文件的增长率等）来提供尽可能准确的进度评估。在许多案例中，这样的watermarks可以在他们的预测中非常准确。即便如此，使用启发式watermark就意味着它可能是错的，这会导致late data。我们稍后介绍处理late data的方法。
+
+由于它们提供了输入完整性的概念，所以watermarks形成了前面提到的第二类触发器：*完整性 触发器*的基础。watermarks本身是非常有意思且复杂的主题，第3章中将会深入探讨。但是现在，让我们通过更新我们的示例管道以利用基于watermarks的完整性触发器来研究下它们，如Example 2-6所示
+
+![Example2-6](..\picture\streaming\Example2-6.png)
+
+​	Watermarks有一个有趣的性质是：它们是一类函数。也就是说有多个不同的满足watermark特性的函数F(P) -> E表示不同程度的成功。我之前提到的，你完全了解输入数据的场景很可能建立一个完美的watermark，这是理想情况。而对于你无法完全了解输入数据或者计算完美watermark成本太高的场景，你可能会选择启发式来定义你的watermark。我想在这里提出的观点是使用中的watermark算法是独立于pipeline本身的。我们不打算在这里详细讨论实现watermark的意义（第三章说了）。现在，为了推动给定的输入集可以应用不同的watermarks这个想法，让我们看一下示例2-6中的pipeline，当在同一数据集上使用两个不同的watermark实现时（图2-10） ）：左边是perfect watermark; 右边是heuristic watermark。
+
+​	在这两种情况下，当水印通过窗口的末端时，窗口被计算。
+
 图和表见：http://www.streamingbook.net/fig
+
