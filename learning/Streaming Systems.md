@@ -514,7 +514,54 @@ PCollection<KV<Team, Integer>> totals = input
 
 ​	Watermarks有一个有趣的性质是：它们是一类函数。也就是说有多个不同的满足watermark特性的函数F(P) -> E表示不同程度的成功。我之前提到的，你完全了解输入数据的场景很可能建立一个完美的watermark，这是理想情况。而对于你无法完全了解输入数据或者计算完美watermark成本太高的场景，你可能会选择启发式来定义你的watermark。我想在这里提出的观点是使用中的watermark算法是独立于pipeline本身的。我们不打算在这里详细讨论实现watermark的意义（第三章说了）。现在，为了推动给定的输入集可以应用不同的watermarks这个想法，让我们看一下示例2-6中的pipeline，当在同一数据集上使用两个不同的watermark实现时（图2-10） ）：左边是perfect watermark; 右边是heuristic watermark。
 
-​	在这两种情况下，当水印通过窗口的末端时，窗口被计算。
+​	在这两种情况下，当watermark通过窗口的末端时，窗口被计算。如你所料，perfect watermark随着时间的推移可以完美地捕获管道的event-time完整性。相比之下，用于右侧启发式水印的特定算法未考虑9的值，这大大改变了物化输出的形状，无论是在输出延迟还是正确性方面（如错误答案所示5为[12:00,12：02]窗口提供的）。
+
+
+
+#### Summary
+
+随着本章结束，你现在理解了强大的流式处理的基础只是，并准备好进入世界并做出惊人的事情。当然，还有八个章节焦急地等着你的注意力，所以希望你现在不会像现在这样，这一刻。 但无论如何，让我们回顾一下我们刚才所涵盖的内容，以免你在匆忙中忘记任何一个问题。 首先，我们谈到的主要概念：
+
+* 事件时间与处理时间
+  * 时间何时发生和事件何时被你的数据处理系统观测到之间最重要的区别
+* 窗口化
+  * 通过沿着时间边界（processing time或者event time，即使我们把Beam Model中的窗口化定义缩小到仅仅为沿着event time切分）切分的方式来管理无界数据的常见方法
+* 触发器
+  * 用于精确指定何时物化输出对你的特定用例有意义的声明机制
+* Watermarks
+  * event time中进度的强大概念，提供一种在处理无界数据的无序处理系统推理完整性的方法
+* Accumulation
+
+第二，我们用来构建探索的4个问题：
+
+* what：什么结果会被计算？=transformations
+* where：在事件时间的什么位置计算结果？=windowing
+* When：处理时间中何时物化结果？=triggers + watermarks
+* How：结果的细化如何做相关？=accumulation
+
+第三，实现流式处理的这种模型提供的灵活性（因为最终，这就是真正的意义所在：平衡竞争紧张，如正确性，延迟和成本）。回顾一下我们能够在相同数据集上实现的主要输出变化，只需要进行最少量的代码更改：
+
+![z1](..\picture\streaming\z1.png)
+
+![z2](..\picture\streaming\z2.png)
+
+我们只看了一种窗口化类型：事件时间中的固定窗口。如我们所知，窗口化有许多维度，我想在此时接触其中至少2个。然而，首先我们将绕道去深入了解watermarks，因为这个知识将帮助我们构建后面的讨论（本身也很有吸引力）。
+
+### Chapter 3. Watermarks
+
+到目前为止，我们一直在从管道作者或者数据科学家的角度来看待流式处理。Chapter 2介绍watermarks作为处理发生在event-time的何处和在processing tiem的何时物化结果（where in event-time processing is taking place and when in processing time results are materialized）问题的一部分答案。本章，我们回答同样的问题，但是从流式处理系统的底层机制的角度来看。研究这些机制将有助于我们激发，理解和应用watermakers的概念。我们将讨论如何在数据的入口处创建watermarks，它们如何在数据处理管道中传播，它们如何影响输出时间戳。我们也演示了在处理无界数据时，watermarks如何保留回答问题——事件时间中何处处理数据和数据何时被物化所必需的guarantees。
+
+#### Definition
+
+考虑任意持续获取数据和输出结果的管道。
+
+
+
+
+
+
+
+
 
 图和表见：http://www.streamingbook.net/fig
 
