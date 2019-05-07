@@ -577,7 +577,7 @@ PCollection<KV<Team, Integer>> totals = input
 * Completeness
   * 如果水印超过某个时间戳T，我们可以通过其单调性来保证在T处或之前不会再对准时（非相关数据）事件进行处理。因此，我们可以在T处或之前正确地发出任何聚合。换句话说，watermark允许我们知道何时正确地关闭窗口
 * Visibility 
-  * 如果某条消息因为某个原因卡在管道中，watermark则不能推移。此外，我们将通过检查阻止watermark前进的消息来找到问题的根源。
+  * 如果某条消息由于某些原因卡在管道中，watermark则不能推移。此外，我们将可以通过检查阻止watermark前进的消息来找到问题的根源。
 
 #### Source Watermark Creation
 
