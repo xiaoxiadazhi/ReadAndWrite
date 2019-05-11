@@ -575,24 +575,26 @@ PCollection<KV<Team, Integer>> totals = input
 这个定义包含两个基础特性：
 
 * Completeness
-  * 如果水印超过某个时间戳T，我们可以通过其单调性来保证在T处或之前不会再对准时（非相关数据）事件进行处理。因此，我们可以在T处或之前正确地发出任何聚合。换句话说，watermark允许我们知道何时正确地关闭窗口
+  * 如果watermark迁移越过了某个时间戳T，我们可以根据它的单调性保证：不会再对T之前的及时（非延迟数据）事件进行处理。因此，我们可以在T处或之前准确地发送任何聚合结果。换句话说，watermark允许我们知道何时能正确地关闭窗口
 * Visibility 
-  * 如果某条消息由于某些原因卡在管道中，watermark则不能推移。此外，我们将可以通过检查阻止watermark前进的消息来找到问题的根源。
+  * 如果某条消息由于某些原因卡在管道中，watermark则不能前进。另外，我们还可以通过检查阻止watermark前进的消息来找到问题的根源。
 
 #### Source Watermark Creation
 
-这些watermarks从哪来？为了给某个数据源确定watermark，我们必须给来自这个数据源的每条消息在进入管道时分配一个逻辑事件时间戳。正如第2章所述，所有watermark的创建都属于2大类：perfect和heuristic。为了提醒我们自己pefect和heuristic watermarks的区别，让我们看下图3-2，它显示了第2章中的窗口求和示例
+这些watermarks从哪来？为某个数据源确定一个watermark，我们必须在来自这个数据源的每条消息进入管道的时候时给它们分配一个逻辑事件时间戳。正如第2章所述，所有watermark的创建都属于2大类：perfect和heuristic。为了提醒我们自己pefect和heuristic watermarks的区别，让我们看下图3-2，它展示了第2章中的窗口求和示例
 
-注意，区分特征是pefect watermarks确保watermark对所有数据负责，而heuristic watermarks允许一些迟到数据。
+![3-2](..\picture\streaming\3-2.png)
 
-在watermark被创建为pefect或heuristic后，watermarks在管道的其余部分保持不变。至于什么使水印创作完美或启发式，它在很大程度上取决于被消费的数据源的性质。 为了了解原因，让我们看一下每种水印创建的几个例子
+注意，区分特征是pefect watermarks确保watermark对所有数据进行计算，而heuristic watermarks只允许一些迟到数据。
+
+在watermark被创建为pefect或heuristic后，watermarks在管道的其余部分保持不变。至于创建的watermark是完美的还是启发式的，很大程度上取决于被消费的数据源的性质。 为了了解原因，让我们看一下每种watermark创建的几个例子。
 
 #####  Perfect Watermark Creation
 
-完美式watermark创建使用这种方式给进入的消息分配时间戳：最终的watermark严格保证管道将不会看到来自于这个数据源的、事件时间小于watermark的数据。使用完美式watermark创建的管道不再处理迟到的数据；即，在watermark已经推移通过了新到达消息的事件时间之后到达的数据。然而，完美式watermark创建需要对输入数据完全了解，这对很多现实世界的分布式数据源来说是不切实际的。这有两个能创建完美式watermark的例子：
+完美式watermark的创建使用这种方式给到来的消息分配时间戳：最终的watermark严格保证管道将不会看到来自该数据源的、事件时间小于watermark的数据。使用完美式watermark创建的管道不再处理迟到的数据。然而，完美式watermark的创建需要完全了解输入数据，这对很多现实世界的分布式输入源来说是不切实际的。下面是两个能创建完美式watermark的例子：
 
 * Ingress timestamping（进入时间戳）
-  * 将数据进入系统的时间戳指定为事件时间的数据源可以创建完美式watermark。在这种情况下，数据源watermark只是跟踪管道所观察到的当前处理时间。这基本上是几乎所有支持窗口化流式系统在2016年之前使用的方法。
+  * 将数据进入系统的事件时间设置为进入时间戳的源可以创建完美式watermark。在这种情况下，数据源watermark只是跟踪管道所观察到的当前处理时间。基本上，几乎所有支持窗口化的流式系统在2016年之前都使用这个方法。
   * 因为事件时间是从单个单调增加的源（实际处理时间）分配的，所以系统完全了解数据流中接下来将有哪些时间戳。结果，event-time progress和窗口化语义变得十分易于推理。当然，缺点是watermark与数据本身的事件时间没有关系；哪些事件时间被丢弃了，而watermark只是跟踪数据相对于其到达系统的进度。
 * Static sets of time-ordered logs 
   * 按时间排序的日志的静态大小的输入源（如一个静态分区集合的Kafka topic，输入源的每个分区包含单调递增事件时间）将是创建完美式watermark相对简单的数据源。为此，数据源将简单追中已知和静态源分区集上未处理数据的最小事件时间（即，每个分区中最近读取记录的事件时间的最小值）
