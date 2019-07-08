@@ -661,7 +661,20 @@ PIPELINE STAGES
 
 这里，我们独立地读每个输入，并且按用户分组。之后，每个pipeline的第一个阶段，我们进入会话窗口，并调用了一个叫CalculateWindowLength的自定义Ptransform。这个Ptransform按用户分组，然后通过将当前窗口的大小视为该窗口的值来计算每个用户会话长度。在这种情况下，我们可以使用默认触发器（AtWatermark）和累积模式（discardingFiredPanes）设置，但我已明确列出它们的完整性。 两个特定用户的每个管道的输出可能如图3-4所示。
 
-由于我们需要跨多个阶段追踪数据，所以我们用红色代表和Mobile Scores相关的东西
+由于我们需要跨多个阶段追踪数据，为了区分，我们用红色代表Mobile Scores相关的东西，蓝色代表Console Socres相关的东西，而黄色代表Average Session Lengths的watermark和输出，见图3-5。
+
+我们已经回答了那4个问题 —— what、where、when、how计算单个会话长度。接下来我们将再次回答它们，将这些会话长度转换为固定时间窗口内的全局会话长度平均值。这要求我们首先将我们的两个数据源拼合为一个，然后重新进入固定窗口;我们已经在我们计算的会话长度值中捕获了会话的重要精髓，现在我们想要在一天中的一致时间窗口内计算这些会话的全局平均值。 例3-2显示了这个代码。
+
+![Example3-2](..\picture\streaming\Example3-2.png)
+
+如果我们看到这个管道正在运行，它将如图3-5所示。如前所述，两个输入管道分别为移动和客户端玩家计算单个会话长度。然后那些会话长度将进入管道的第二阶段，在固定窗口中计算全局会话长度。
+
+这里有两点比较重要：
+
+* Mobile Sessions和Console Sessions各阶段的***输出watermark***至少与每个的相应输入watermark一样久，实际上会更久点。这是因为在实际系统中，计算结果需要花费时间，并且在给定输入的处理完成前。我们不允许输出watermark前移。
+* Average Session Lengths阶段的***输入watermark***是直接上游两个阶段的输出watermark中的较小值
+
+结果是下游输入watermark是上游输出watermark的最小组成的别名。注意这和本章前面的那两类watermarks的定义是相匹配的。还要注意过去下游的水印是如何进一步的，捕捉直观的概念，即上游阶段将比其后续阶段更进一步提前。
 
 ### Chapter 4. Advanced Windowing
 
