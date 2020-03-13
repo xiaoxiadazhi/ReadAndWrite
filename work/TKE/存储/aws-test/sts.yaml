@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: marctest
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginx
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: ivantestweb
+spec:
+  serviceName: "nginx"
+  updateStrategy: 
+    type: RollingUpdate
+  replicas: 1
+  selector:
+     matchLabels:
+       app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: nginx
+        image: ccr.ccs.tencentyun.com/qcloud/nginx:1.9
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: www1
+          mountPath: /aws-test/tmp1
+        - name: www2
+          mountPath: /aws-test/tmp2
+        - name: www3
+          mountPath: /aws-test/tmp3
+        - name: www4
+          mountPath: /aws-test/tmp4
+        - name: www5
+          mountPath: /aws-test/tmp5
+        - name: www6
+          mountPath: /aws-test/tmp6
+        - name: www7
+          mountPath: /aws-test/tmp7
+        - name: www8
+          mountPath: /aws-test/tmp8
+        - name: www9
+          mountPath: /aws-test/tmp9
+        - name: www10
+          mountPath: /aws-test/tmp10
+  volumeClaimTemplates:
+  - metadata:
+      name: www1
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name: www2
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name: www3
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name: www4
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name: www5
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name: www6
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name: www7
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name: www8
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name: www9
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name: www10
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
